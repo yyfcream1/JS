@@ -82,13 +82,14 @@ function no_block_vertical(i, k, j) {
     };
     return true;
 }
+
 function shiftRight() {
     var result = [];
     for (var i = 0; i < game.length; i++) {
         for (var j = game[i].length - 2; j >= 0; j--) {
             if (game[i][j] != 0) {
                 for (var k = game[i].length - 1; k > j; k--) {
-                    //褰撳墠鐨勬槸data[i][j], 濡傛灉鏈€宸﹁竟鐨勬槸0锛?鑰屼笖涔嬮棿鐨勫叏閮ㄦ槸0
+                    //当前的是data[i][j], 如果最左边的是0， 而且之间的全部是0
                     if (game[i][k] === 0 && this.no_block_horizontal(i, k, j)) {
                         result.push({ form: { y: i, x: j }, to: { y: i, x: k } });
                         game[i][k] = game[i][j];
@@ -134,14 +135,14 @@ function shiftLeft() {
 }
 function shiftUp() {
     var result = [];
-    // 寰幆瑕佹娴嬬殑闀垮害
+    // 循环要检测的长度
     for (var i = 0; i < game[0].length; i++) {
-        // 寰幆瑕佹娴嬬殑楂樺害
+        // 循环要检测的高度
         for (var j = 1; j < game.length; j++) {
             if (game[j][i] != 0) {
-                //x鏄‘瀹氱殑, 寰幆y鏂瑰悜;
+                //x是确定的, 循环y方向;
                 for (var k = 0; k < j ; k++) {
-                    //褰撳墠鐨勬槸data[j][i], 濡傛灉鏈€涓婇潰鐨勬槸0锛?鑰屼笖涔嬮棿鐨勫叏閮ㄦ槸0
+                    //当前的是data[j][i], 如果最上面的是0， 而且之间的全部是0
                     if (game[k][i] === 0 && this.no_block_vertical(i, k, j)) {
                         result.push({ form: { y: j, x: i }, to: { y: k, x: i } });
                         game[k][i] = game[j][i];
@@ -159,4 +160,85 @@ function shiftUp() {
         };
     };
     return result;
+}
+function shiftDown() {
+    var result = [];
+    // 循环要检测的长度
+    for (var i = 0; i < game[0].length; i++) {
+        // 循环要检测的高度
+        for (var j = game.length - 1; j >= 0 ; j--) {
+            if (game[j][i] != 0) {
+                //x是确定的, 循环y方向;
+                for (var k = game.length - 1; k > j ; k--) {
+                    if (game[k][i] === 0 && this.no_block_vertical(i, k, j)) {
+                        result.push({ form: { y: j, x: i }, to: { y: k, x: i } });
+                        game[k][i] = game[j][i];
+                        game[j][i] = 0;
+                        break;
+                    } else if (game[k][i] !== 0 && game[k][i] === game[j][i] && this.no_block_vertical(i, j, k)) {
+                        result.push({ form: { y: j, x: i }, to: { y: k, x: i } });
+                        game[k][i] += game[j][i];
+                        score += game[k][i];
+                        game[j][i] = 0;
+                        break;
+                    };
+                };
+            };
+        };
+    };
+    return result;
+}
+function handleKeypress(event) {
+    var whichKey = event.which;
+    var moveArray = [];
+    switch (whichKey) {
+        case 37:
+            //←
+            moveArray = shiftLeft();
+            gameOver();
+            break;
+        case 38:
+            //↑
+            moveArray = shiftUp();
+            gameOver();
+            break;
+        case 39:
+            //→
+            moveArray = shiftRight();
+            gameOver();
+            break;
+        case 40:
+            //↓
+            moveArray = shiftDown();
+            gameOver();
+            break;
+    }
+    console.log(moveArray);
+    for (var i = 0; i < moveArray.length; i++) {
+        var tile = document.getElementById(moveArray[i].form.y + "" + moveArray[i].form.x);
+        var hastile = document.getElementById(moveArray[i].to.y + "" + moveArray[i].to.x);
+        if (hastile != null) {
+            hastile.parentNode.removeChild(hastile);
+        }
+        tile.id = moveArray[i].to.y + "" + moveArray[i].to.x;
+        tile.innerHTML = '<p>' + game[moveArray[i].to.y][moveArray[i].to.x] + '</p>';
+        tile.classList.add('tile--' + game[moveArray[i].to.y][moveArray[i].to.x]);
+        tile.style.top = (moveArray[i].to.y) * 100 + 'px';
+        tile.style.left = (moveArray[i].to.x) * 100 + 'px';
+    }
+    if (moveArray.length != 0) {
+        createRandomTile();
+    }
+    var scorediv = document.getElementById("score");
+    scorediv.innerHTML = "<p>" + score + "</p>";
+}
+function isFull() {
+    for (var i = 0; i < size; i++) {
+        for (var j = 0; j < size; j++) {
+            if (game[i][j] == 0) {
+                return false;
+            }
+        }
+    }
+    return true;
 }
